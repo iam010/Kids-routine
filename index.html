@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF4E8">
+  <meta name="description" content="Evening routine check-in. Hear the next task, mark it done, earn a smiley.">
+  <meta name="format-detection" content="telephone=no, date=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Routine">
+  <title>Daily Routine</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
+  <style>
+    @font-face {
+      font-family: "Nunito";
+      font-style: normal;
+      font-weight: 800;
+      font-display: swap;
+      src: url("./fonts/nunito-latin-800.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+    :root {
+      --bg: #fff4e8;
+      --ink: #2c2416;
+      --muted: #5c4d3c;
+      --card: #ffffff;
+      --line: #f0ddc8;
+      --sun: #ffd447;
+      --sun-deep: #e3ae1a;
+      --coral: #c4321a;
+      --leaf: #0e7c45;
+      --leaf-deep: #0d5c34;
+      --next: #fff6cc;
+      --shadow: 0 10px 28px rgba(90, 48, 12, 0.08);
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Nunito", ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI", sans-serif;
+      font-weight: 800;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    h1, h2, p { margin: 0; }
+
+    .app {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 240px at 50% -50px, #ffe3a3 0%, transparent 70%),
+        var(--bg);
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .top, .hero, .dock { flex: none; }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: calc(14px + env(safe-area-inset-top)) 16px 8px;
+    }
+
+    .brand { min-width: 0; }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 0.92rem;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .score {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 12px 6px 8px;
+      font-size: 1.45rem;
+      line-height: 1;
+      box-shadow: var(--shadow);
+    }
+
+    .score .face { font-size: 1.6rem; }
+
+    .score-num { min-width: 1ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+    .score.pop .face { animation: pop 0.45s ease; }
+
+    .hero {
+      margin: 2px 16px 8px;
+      padding: 14px 16px 18px;
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .kicker {
+      font-size: 1.35rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--coral);
+      line-height: 1.1;
+    }
+
+    .hero.is-complete .kicker { color: var(--leaf-deep); }
+
+    .hero-icon {
+      margin-top: 4px;
+      font-size: 2.6rem;
+      line-height: 1.15;
+    }
+
+    .hero.is-complete .hero-icon { animation: pop 0.55s ease; }
+
+    h2 {
+      margin-top: 2px;
+      font-size: clamp(2.4rem, 12vw, 3.4rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      text-wrap: balance;
+      overflow-wrap: break-word;
+    }
+
+    h2[data-long="true"] { font-size: clamp(1.8rem, 8.2vw, 2.35rem); }
+
+    .hero-sub {
+      margin-top: 4px;
+      color: var(--leaf-deep);
+      font-size: 1.08rem;
+    }
+
+    .hero-sub:empty { display: none; }
+
+    .progress {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #eadccb;
+    }
+
+    .dots span.is-done { background: var(--leaf); }
+
+    .dots span.is-next {
+      background: var(--sun);
+      outline: 2px solid var(--sun-deep);
+    }
+
+    .list-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 2px 12px 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task {
+      width: 100%;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 16px;
+      text-align: left;
+    }
+
+    .task:active { background: #fff; }
+
+    .task.is-next { background: var(--next); }
+
+    .task.is-next:active { background: #ffe9a0; }
+
+    .num {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: #f3e6d6;
+      font-size: 0.85rem;
+      flex: none;
+    }
+
+    .task .emoji {
+      width: 1.7rem;
+      font-size: 1.35rem;
+      text-align: center;
+      flex: none;
+    }
+
+    .task .name {
+      flex: 1;
+      font-size: 1.08rem;
+      line-height: 1.2;
+      overflow-wrap: break-word;
+    }
+
+    .task.is-done .name { color: var(--muted); }
+
+    .pill {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--coral);
+      background: #fff;
+      border-radius: 999px;
+      padding: 4px 8px;
+      flex: none;
+    }
+
+    .mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 2px solid #e4d3c0;
+      display: grid;
+      place-items: center;
+      flex: none;
+      font-size: 0.95rem;
+      color: transparent;
+    }
+
+    .task.is-next .mark { border-color: var(--sun-deep); background: #fff; }
+
+    .task.is-next:not(.is-done) .mark::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--sun-deep);
+    }
+
+    .task.is-done .mark {
+      background: #e5f6ec;
+      border-color: var(--leaf);
+      color: var(--leaf-deep);
+    }
+
+    .dock {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 6px 16px calc(12px + env(safe-area-inset-bottom));
+      background: var(--bg);
+    }
+
+    .speaker, .done { width: 100%; }
+
+    .speaker {
+      min-height: 56px;
+      border-radius: 18px;
+      background: #fff;
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 1.12rem;
+    }
+
+    .speaker svg { color: var(--coral); flex: none; }
+
+    .speaker.is-speaking {
+      background: #fff6d0;
+      border-color: var(--sun-deep);
+    }
+
+    .speaker:active { transform: scale(0.985); }
+
+    .done {
+      min-height: 76px;
+      border-radius: 22px;
+      background: var(--sun);
+      box-shadow: 0 6px 0 var(--sun-deep);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.1;
+    }
+
+    .done:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--sun-deep);
+    }
+
+    .done:disabled {
+      background: #e5f6ec;
+      color: var(--leaf-deep);
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .done-kicker {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    .done-label {
+      font-size: 1.65rem;
+      overflow-wrap: break-word;
+      text-align: center;
+      padding: 0 8px;
+    }
+
+    .done-label[data-long="true"] { font-size: 1.28rem; }
+
+    .undo {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0 4px;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .undo[hidden] { display: none; }
+
+    .undo:active { color: var(--ink); }
+
+    .fine {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .noscript {
+      margin: 12px 16px;
+      color: var(--muted);
+    }
+
+    .burst {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .burst span {
+      position: absolute;
+      bottom: 14%;
+      animation: rise 1.15s ease-out forwards;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    :focus { outline: none; }
+
+    :focus-visible {
+      outline: 3px solid #1d4ed8;
+      outline-offset: 2px;
+    }
+
+    @keyframes pop {
+      50% { transform: scale(1.28); }
+    }
+
+    @keyframes rise {
+      to { transform: translateY(-72vh) rotate(12deg); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .score.pop .face,
+      .hero.is-complete .hero-icon,
+      .burst span { animation: none; }
+    }
+
+    @media (min-width: 560px) {
+      body {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(900px 420px at 50% -10%, #ffe7b0, transparent 60%),
+          #ffe8d2;
+      }
+
+      .app {
+        width: min(430px, 100%);
+        height: min(920px, 100dvh);
+        border-radius: 32px;
+        border: 2px solid var(--line);
+        box-shadow: 0 24px 60px rgba(80, 40, 10, 0.14);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <p class="eyebrow" id="today">Today</p>
+        <h1>Daily Routine</h1>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="undo" id="undo-btn" hidden aria-label="Undo last check">Undo</button>
+        <div class="score" id="score" aria-live="polite" aria-atomic="true">
+        <span class="face" aria-hidden="true">😊</span>
+        <span class="score-num" id="score-num">0</span>
+        <span class="sr-only"> smileys</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero" id="hero" aria-live="polite">
+      <p class="kicker" id="kicker">Next</p>
+      <p class="hero-icon" id="hero-icon" aria-hidden="true">✏️</p>
+      <h2 id="hero-title">Homework</h2>
+      <p class="hero-sub" id="hero-sub"></p>
+      <p class="progress" id="progress">0 of 6</p>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </section>
+
+    <div class="list-wrap">
+      <noscript>
+        <p class="noscript">Turn on JavaScript to use the routine checklist.</p>
+      </noscript>
+      <ol id="list" aria-label="Routine"></ol>
+    </div>
+
+    <footer class="dock">
+      <button type="button" class="speaker" id="speak-btn" aria-label="Hear Homework">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <path fill="currentColor" d="M3 9.5v5h4l5 4v-13l-5 4H3z"></path>
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7"></path>
+          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M18.5 6a8.5 8.5 0 0 1 0 12"></path>
+        </svg>
+        <span>Hear it</span>
+      </button>
+      <button type="button" class="done" id="done-btn">
+        <span class="done-kicker" id="done-kicker">Mark done</span>
+        <span class="done-label" id="done-label">Homework</span>
+      </button>
+      <p class="fine">Checks reset each day. Smileys stay.</p>
+    </footer>
+
+    <div class="burst" id="burst" aria-hidden="true"></div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // Routine, in order. label is shown and spoken. icon is an emoji.
+    const TASKS = [
+      { id: 'homework', label: 'Homework', icon: '✏️' },
+      { id: 'bath', label: 'Bath', icon: '🛁' },
+      { id: 'brush-teeth', label: 'Brush teeth', icon: '🪥' },
+      { id: 'pack-bag', label: 'Pack school bag', icon: '🎒' },
+      { id: 'tidy-toys', label: 'Tidy up toys', icon: '🧸' },
+      { id: 'bed', label: 'Go to bed', icon: '🌙' },
+    ];
+
+    const CHEER = 'Great job! You earned a smiley!';
+    const STORAGE_KEY = 'kids-daily-routine-v1';
+
+    let isoFmt = null;
+    let prettyFmt = null;
+
+    function taipeiDate(now = new Date()) {
+      try {
+        if (!isoFmt || !prettyFmt) {
+          const iso = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Taipei',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          });
+          const pretty = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Taipei',
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          });
+          isoFmt = iso;
+          prettyFmt = pretty;
+        }
+        const parts = isoFmt.formatToParts(now);
+        const pick = (type) => parts.find((part) => part.type === type)?.value || '';
+        const year = pick('year');
+        const month = pick('month');
+        const day = pick('day');
+        if (!year || !month || !day) throw new Error('date parts missing');
+        return { iso: `${year}-${month}-${day}`, pretty: prettyFmt.format(now) };
+      } catch (error) {
+        const shifted = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        const iso = shifted.toISOString().slice(0, 10);
+        return { iso, pretty: iso };
+      }
+    }
+
+    function cleanCount(value) {
+      const n = Math.floor(Number(value));
+      if (!Number.isFinite(n) || n < 0) return 0;
+      return n;
+    }
+
+    function cleanChecked(list) {
+      const known = new Set(TASKS.map((task) => task.id));
+      const seen = new Set();
+      const result = [];
+      if (!Array.isArray(list)) return result;
+      for (const id of list) {
+        if (typeof id !== 'string' || !known.has(id) || seen.has(id)) continue;
+        seen.add(id);
+        result.push(id);
+      }
+      return result;
+    }
+
+    function allDoneList(checked) {
+      return TASKS.every((task) => checked.includes(task.id));
+    }
+
+    function prettyFromIso(iso) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+      if (!match) return iso || '';
+      const utc = new Date(Date.UTC(
+        Number(match[1]),
+        Number(match[2]) - 1,
+        Number(match[3]),
+        4,
+        0,
+        0
+      ));
+      return taipeiDate(utc).pretty;
+    }
+
+    function readRaw() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function normalize(raw) {
+      const today = taipeiDate().iso;
+      let smileys = cleanCount(raw.smileys);
+      const sameDay = raw.date === today;
+      const checked = sameDay ? cleanChecked(raw.checked) : [];
+      let smileyAwardedOn = sameDay && raw.smileyAwardedOn === today ? today : null;
+      if (sameDay && allDoneList(checked) && smileyAwardedOn !== today) {
+        smileys += 1;
+        smileyAwardedOn = today;
+      }
+      return { date: today, checked, smileys, smileyAwardedOn };
+    }
+
+    let state = normalize(readRaw());
+
+    function allDone() {
+      return allDoneList(state.checked);
+    }
+
+    function nextTask() {
+      return TASKS.find((task) => !state.checked.includes(task.id)) || null;
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          date: state.date,
+          checked: state.checked,
+          smileys: state.smileys,
+          smileyAwardedOn: state.smileyAwardedOn,
+        }));
+      } catch (error) {
+        // Private mode can block storage. The screen still updates for this visit.
+      }
+    }
+
+    function rollDateIfNeeded() {
+      const today = taipeiDate().iso;
+      if (state.date === today) return false;
+      state = {
+        date: today,
+        checked: [],
+        smileys: state.smileys,
+        smileyAwardedOn: null,
+      };
+      save();
+      return true;
+    }
+
+    const keptUtterances = [];
+    let speakToken = 0;
+
+    function pickEnglishVoice(voices) {
+      const list = Array.isArray(voices) ? voices : [];
+      const norm = (lang) => String(lang || '').toLowerCase().replace(/_/g, '-');
+      const english = list.filter((voice) => norm(voice.lang).startsWith('en'));
+      const us = english.filter((voice) => norm(voice.lang).startsWith('en-us'));
+      const pool = us.length ? us : english;
+      if (!pool.length) return null;
+      const local = pool.filter((voice) => voice.localService);
+      const ranked = local.length ? local : pool;
+      return ranked.find((voice) => /samantha|google us english/i.test(voice.name)) || ranked[0];
+    }
+
+    function speak(text) {
+      const synth = window.speechSynthesis;
+      if (!synth || typeof SpeechSynthesisUtterance !== 'function' || !text) return;
+      const token = ++speakToken;
+      const button = document.getElementById('speak-btn');
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Keep the utterance alive. Safari can drop speech if it is garbage-collected.
+      keptUtterances.push(utterance);
+      if (keptUtterances.length > 8) keptUtterances.shift();
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.05;
+      utterance.volume = 1;
+      try {
+        const voice = pickEnglishVoice(synth.getVoices());
+        if (voice) utterance.voice = voice;
+      } catch (error) {
+        // Speak with lang en-US even when the voice list is not ready yet.
+      }
+      const stop = () => {
+        if (token !== speakToken) return;
+        button.classList.remove('is-speaking');
+      };
+      utterance.onend = stop;
+      utterance.onerror = stop;
+      button.classList.add('is-speaking');
+      window.setTimeout(stop, 8000);
+      try {
+        // iOS Safari only starts speech in the same turn as a tap.
+        // Cancel first only when something else is already talking.
+        if (synth.speaking || synth.pending) synth.cancel();
+        synth.speak(utterance);
+        if (synth.paused) synth.resume();
+      } catch (error) {
+        stop();
+      }
+    }
+
+    function bindVoices() {
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      const load = () => {
+        try { synth.getVoices(); } catch (error) { /* ignore */ }
+      };
+      load();
+      if (typeof synth.addEventListener === 'function') {
+        synth.addEventListener('voiceschanged', load);
+      } else {
+        synth.onvoiceschanged = load;
+      }
+    }
+
+    let burstGen = 0;
+
+    function celebrate() {
+      const root = document.getElementById('burst');
+      const gen = ++burstGen;
+      root.replaceChildren();
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (let i = 0; i < 12; i += 1) {
+        const bit = document.createElement('span');
+        bit.textContent = '😊';
+        bit.style.left = `${8 + Math.random() * 84}%`;
+        bit.style.fontSize = `${20 + Math.random() * 18}px`;
+        bit.style.animationDelay = `${Math.random() * 0.15}s`;
+        root.appendChild(bit);
+      }
+      window.setTimeout(() => {
+        if (gen === burstGen) root.replaceChildren();
+      }, 1400);
+    }
+
+    function isLong(label) {
+      return label.length > 10;
+    }
+
+    function render({ pop = false } = {}) {
+      const next = nextTask();
+      const doneCount = state.checked.length;
+
+      document.getElementById('today').textContent = prettyFromIso(state.date);
+      document.getElementById('score-num').textContent = String(state.smileys);
+      const score = document.getElementById('score');
+      if (pop) {
+        score.classList.remove('pop');
+        void score.offsetWidth;
+        score.classList.add('pop');
+      }
+
+      const hero = document.getElementById('hero');
+      hero.classList.toggle('is-complete', !next);
+      document.getElementById('kicker').textContent = next ? 'Next' : 'All done';
+      document.getElementById('hero-icon').textContent = next ? next.icon : '😊';
+      const title = document.getElementById('hero-title');
+      title.textContent = next ? next.label : 'Great job!';
+      title.dataset.long = isLong(title.textContent) ? 'true' : 'false';
+      document.getElementById('hero-sub').textContent = next ? '' : 'You earned a smiley';
+      document.getElementById('progress').textContent = `${doneCount} of ${TASKS.length}`;
+
+      const dots = document.getElementById('dots');
+      dots.replaceChildren();
+      TASKS.forEach((task) => {
+        const dot = document.createElement('span');
+        if (state.checked.includes(task.id)) dot.className = 'is-done';
+        else if (next && next.id === task.id) dot.className = 'is-next';
+        dots.append(dot);
+      });
+
+      const list = document.getElementById('list');
+      list.replaceChildren();
+      TASKS.forEach((task, index) => {
+        const done = state.checked.includes(task.id);
+        const isNext = Boolean(next && next.id === task.id);
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `task${done ? ' is-done' : ''}${isNext ? ' is-next' : ''}`;
+        button.dataset.id = task.id;
+        button.setAttribute('aria-pressed', done ? 'true' : 'false');
+        if (isNext) button.setAttribute('aria-current', 'step');
+
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = String(index + 1);
+
+        const emoji = document.createElement('span');
+        emoji.className = 'emoji';
+        emoji.textContent = task.icon;
+        emoji.setAttribute('aria-hidden', 'true');
+
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = task.label;
+
+        const mark = document.createElement('span');
+        mark.className = 'mark';
+        mark.textContent = done ? '✓' : '';
+        mark.setAttribute('aria-hidden', 'true');
+
+        button.append(num, emoji, name);
+        if (isNext) {
+          const pill = document.createElement('span');
+          pill.className = 'pill';
+          pill.textContent = 'Next';
+          button.append(pill);
+        }
+        button.append(mark);
+        button.addEventListener('click', () => onRow(task.id));
+        li.append(button);
+        list.append(li);
+      });
+
+      const speakBtn = document.getElementById('speak-btn');
+      speakBtn.setAttribute('aria-label', next ? `Hear ${next.label}` : 'Hear the cheer');
+
+      const doneBtn = document.getElementById('done-btn');
+      const doneKicker = document.getElementById('done-kicker');
+      const doneLabel = document.getElementById('done-label');
+      doneBtn.disabled = !next;
+      if (next) {
+        doneKicker.textContent = 'Mark done';
+        doneLabel.textContent = next.label;
+      } else {
+        doneKicker.textContent = 'All done';
+        doneLabel.textContent = 'See you tomorrow';
+      }
+      doneLabel.dataset.long = isLong(doneLabel.textContent) ? 'true' : 'false';
+
+      document.getElementById('undo-btn').hidden = state.checked.length === 0;
+    }
+
+    function complete(id) {
+      if (state.checked.includes(id)) return;
+      const before = nextTask();
+      state.checked = state.checked.concat(id);
+      let cheered = false;
+      if (allDone() && state.smileyAwardedOn !== state.date) {
+        state.smileys += 1;
+        state.smileyAwardedOn = state.date;
+        cheered = true;
+      }
+      save();
+      render({ pop: cheered });
+      if (cheered) {
+        celebrate();
+        speak(CHEER);
+        return;
+      }
+      const after = nextTask();
+      if (after && (!before || before.id !== after.id)) speak(after.label);
+    }
+
+    function uncheck(id) {
+      if (!state.checked.includes(id)) return;
+      const wasAll = allDone();
+      state.checked = state.checked.filter((item) => item !== id);
+      if (wasAll && state.smileyAwardedOn === state.date) {
+        state.smileys = Math.max(0, state.smileys - 1);
+        state.smileyAwardedOn = null;
+      }
+      save();
+      render();
+    }
+
+    function onRow(id) {
+      if (rollDateIfNeeded()) {
+        render();
+        const next = nextTask();
+        if (next) speak(next.label);
+        return;
+      }
+      if (state.checked.includes(id)) uncheck(id);
+      else complete(id);
+    }
+
+    function onDone() {
+      if (rollDateIfNeeded()) {
+        render();
+        const next = nextTask();
+        if (next) speak(next.label);
+        return;
+      }
+      const next = nextTask();
+      if (!next) return;
+      complete(next.id);
+    }
+
+    function onHear() {
+      if (rollDateIfNeeded()) render();
+      const next = nextTask();
+      speak(next ? next.label : CHEER);
+    }
+
+    function onUndo() {
+      if (rollDateIfNeeded()) {
+        render();
+        return;
+      }
+      const last = state.checked[state.checked.length - 1];
+      if (!last) return;
+      uncheck(last);
+    }
+
+    document.getElementById('done-btn').addEventListener('click', onDone);
+    document.getElementById('speak-btn').addEventListener('click', onHear);
+    document.getElementById('undo-btn').addEventListener('click', onUndo);
+    document.addEventListener('pointerdown', () => {
+      try { window.speechSynthesis?.getVoices(); } catch (error) { /* ignore */ }
+    }, { capture: true, passive: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (rollDateIfNeeded()) render();
+    });
+    window.addEventListener('pageshow', () => {
+      if (rollDateIfNeeded()) render();
+    });
+    window.addEventListener('storage', (event) => {
+      if (event.key !== STORAGE_KEY) return;
+      state = normalize(readRaw());
+      render();
+    });
+    window.setInterval(() => {
+      if (state.date !== taipeiDate().iso) {
+        rollDateIfNeeded();
+        render();
+      }
+    }, 15000);
+
+    bindVoices();
+    save();
+    render();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' }).catch(() => {});
+    }
+  </script>
+</body>
+</html>
